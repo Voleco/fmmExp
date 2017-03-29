@@ -927,13 +927,14 @@ void AnalyzeMap(const char *map, const char *scenario, double weight)
 
 void AnalyzeNBS(const char *map, const char *scenario, double weight)
 {
-	NBS<xyLoc, tDirection, MapEnvironment> nbs;
+	NBS<xyLoc, tDirection, MapEnvironment, NBSQueue<xyLoc,0>> nbs;
 	BSStar<xyLoc, tDirection, MapEnvironment> bs;
 	//NBS<xyLoc, tDirection, MapEnvironment, NBSQueueGF<xyLoc>, BDOpenClosed<xyLoc, NBSGLowHigh<xyLoc>, NBSFLowHigh<xyLoc>>> nbs;
 	
-	MM<xyLoc, tDirection, MapEnvironment> mm;
-	MM<xyLoc, tDirection, MapEnvironment> mm0;
+	MM<xyLoc, tDirection, MapEnvironment> mm(0);
+	MM<xyLoc, tDirection, MapEnvironment> mm0(0);
 	TemplateAStar<xyLoc, tDirection, MapEnvironment> astar;
+	TemplateAStar<xyLoc, tDirection, MapEnvironment> backastar;
 	
 	printf("Loading %s with scenario %s\n", map, scenario);
 	ScenarioLoader s(scenario);
@@ -956,14 +957,19 @@ void AnalyzeNBS(const char *map, const char *scenario, double weight)
 		printf("Problem %d of %d from ", x, s.GetNumExperiments());
 		std::cout << start << " to " << goal << "\n";
 		std::vector<xyLoc> correctPath;
+		std::vector<xyLoc> correctPath2;
 		std::vector<xyLoc> mmPath;
 		std::vector<xyLoc> mm0Path;
 		std::vector<xyLoc> nbsPath;
 		std::vector<xyLoc> bsPath;
 		astar.SetHeuristic(me);
+		backastar.SetHeuristic(me);
 
 		astar.GetPath(me, start, goal, correctPath);
-		printf("%d %1.1f A* nodes: %llu necessary %llu\n", x, me->GetPathLength(correctPath), astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
+		printf("%d %1.1f forward A* nodes: %llu necessary %llu\n", x, me->GetPathLength(correctPath), astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
+		backastar.GetPath(me, goal, start, correctPath2);
+		printf("%d %1.1f backward A* nodes: %llu necessary %llu\n", x, me->GetPathLength(correctPath2), backastar.GetNodesExpanded(), backastar.GetNecessaryExpansions());
+
 		bs.GetPath(me, start, goal, me, me, bsPath);
 		printf("%d %1.1f BS nodes: %llu necessary %llu\n", x, me->GetPathLength(bsPath), bs.GetNodesExpanded(), bs.GetNecessaryExpansions());
 		mm.GetPath(me, start, goal, me, me, mmPath);
@@ -973,19 +979,19 @@ void AnalyzeNBS(const char *map, const char *scenario, double weight)
 		mm0.GetPath(me, start, goal, &z, &z, mm0Path);
 		printf("%d %1.1f MM0 nodes: %llu necessary %llu\n", x, me->GetPathLength(mm0Path), mm0.GetNodesExpanded(), mm0.GetNecessaryExpansions());
 
-		printf("NBSNecessaryRatios: NBS/A* %1.2f NBS/BS %1.2f NBS/MM %1.2f NBS/MM0 %1.2f\n",
-			   (double)nbs.GetNecessaryExpansions()/astar.GetNecessaryExpansions(),
-			   (double)nbs.GetNecessaryExpansions()/bs.GetNecessaryExpansions(),
-			   (double)nbs.GetNecessaryExpansions()/mm.GetNecessaryExpansions(),
-			   (double)nbs.GetNecessaryExpansions()/mm0.GetNecessaryExpansions()
-			   );
-		printf("SelfNecessaryRatios: A* %1.2f BS %1.2f MM %1.2f NBS %1.2f MM0 %1.2f\n",
-			   (double)astar.GetNodesExpanded()/astar.GetNecessaryExpansions(),
-			   (double)bs.GetNodesExpanded()/bs.GetNecessaryExpansions(),
-			   (double)mm.GetNodesExpanded()/mm.GetNecessaryExpansions(),
-			   (double)nbs.GetNodesExpanded()/nbs.GetNecessaryExpansions(),
-			   (double)mm0.GetNodesExpanded()/mm0.GetNecessaryExpansions()
-			   );
+		//printf("NBSNecessaryRatios: NBS/A* %1.2f NBS/BS %1.2f NBS/MM %1.2f NBS/MM0 %1.2f\n",
+		//	   (double)nbs.GetNecessaryExpansions()/astar.GetNecessaryExpansions(),
+		//	   (double)nbs.GetNecessaryExpansions()/bs.GetNecessaryExpansions(),
+		//	   (double)nbs.GetNecessaryExpansions()/mm.GetNecessaryExpansions(),
+		//	   (double)nbs.GetNecessaryExpansions()/mm0.GetNecessaryExpansions()
+		//	   );
+		//printf("SelfNecessaryRatios: A* %1.2f BS %1.2f MM %1.2f NBS %1.2f MM0 %1.2f\n",
+		//	   (double)astar.GetNodesExpanded()/astar.GetNecessaryExpansions(),
+		//	   (double)bs.GetNodesExpanded()/bs.GetNecessaryExpansions(),
+		//	   (double)mm.GetNodesExpanded()/mm.GetNecessaryExpansions(),
+		//	   (double)nbs.GetNodesExpanded()/nbs.GetNecessaryExpansions(),
+		//	   (double)mm0.GetNodesExpanded()/mm0.GetNecessaryExpansions()
+		//	   );
 
 //		std::cout << "A*\t" << astar.GetNodesExpanded() << "\tNBS:\t" << nbs.GetNodesExpanded() << "\tBS*:\t" << bs.GetNodesExpanded();
 //		std::cout << "\tMM:\t" << mm.GetNodesExpanded() << "\n";

@@ -12,6 +12,7 @@
 #include "AStarOpenClosed.h"
 #include "FPUtil.h"
 #include "Timer.h"
+#include "PairHash.h"
 #include <unordered_map>
 
 template <class state, int epsilon = 1>
@@ -54,6 +55,22 @@ public:
 	uint64_t GetNodesTouched() const { return nodesTouched; }
 	uint64_t GetNecessaryExpansions() const;
 
+	void PrintExpandedStats(std::unordered_map<std::pair<double, double>, int>  &s)
+	{
+		printf("BS* Search Expanded distributions: (%s)\n", ((&s) == (&f)) ? "forward" : "backward");
+		for (auto i = s.begin(); i != s.end(); i++)
+		{
+			if (i->second > 0)
+			{
+				bool ignore = false;
+				ignore = (i->first.first + i->first.second >= currentCost);
+				printf("%c g: %1.1f h: %1.1f count: %d\n", ignore ? '*' : ' ',
+					i->first.first, i->first.second, i->second);
+			}
+		}
+	}
+
+
 	void OpenGLDraw() const;
 	
 	//	void SetWeight(double w) {weight = w;}
@@ -86,14 +103,16 @@ private:
 	void OpenGLDraw(const priorityQueue &queue) const;
 	
 	void Expand(priorityQueue &current,
-				priorityQueue &opposite,
-				Heuristic<state> *heuristic,
-				const state &target);
+		priorityQueue &opposite,
+		Heuristic<state> *heuristic,
+		const state &target,
+		std::unordered_map<std::pair<double, double>, int> &count);
 	priorityQueue forwardQueue, backwardQueue;
 	state goal, start;
 //	std::unordered_map<std::pair<double, double>, int> dist;
 //	std::unordered_map<std::pair<double, double>, int> f, b;
 	uint64_t nodesTouched, nodesExpanded, uniqueNodesExpanded;
+	std::unordered_map<std::pair<double, double>, int> f, b;
 	state middleNode;
 	double currentCost;
 	double lastMinForwardG;
@@ -136,6 +155,8 @@ bool BSStar<state, action, environment, priorityQueue>::InitializeSearch(environ
 	thePath.resize(0);
 	start = from;
 	goal = to;
+	f.clear();
+	b.clear();
 	if (start == goal)
 		return false;
 	oldp1 = oldp2 = 0;
@@ -160,20 +181,23 @@ bool BSStar<state, action, environment, priorityQueue>::DoSingleSearchStep(std::
 			thePath = pFor;
 			thePath.insert( thePath.end(), pBack.begin()+1, pBack.end() );
 		}
+		PrintExpandedStats(f);
+		PrintExpandedStats(b);
 		return true;
 	}
 	
 	if (forwardQueue.OpenSize() > backwardQueue.OpenSize())
-		Expand(backwardQueue, forwardQueue, backwardHeuristic, start);
+		Expand(backwardQueue, forwardQueue, backwardHeuristic, start,b);
 	else
-		Expand(forwardQueue, backwardQueue, forwardHeuristic, goal);
+		Expand(forwardQueue, backwardQueue, forwardHeuristic, goal,f);
 	return false;
 }
 
 template <class state, class action, class environment, class priorityQueue>
 void BSStar<state, action, environment, priorityQueue>::Expand(priorityQueue &current,
 														   priorityQueue &opposite,
-														   Heuristic<state> *heuristic, const state &target)
+														   Heuristic<state> *heuristic, const state &target,
+	std::unordered_map<std::pair<double, double>, int> &count)
 {
 	uint64_t nextID;
 	
@@ -207,6 +231,11 @@ void BSStar<state, action, environment, priorityQueue>::Expand(priorityQueue &cu
 	nodesExpanded++;
 	if (current.Lookup(nextID).reopened == false)
 		uniqueNodesExpanded++;
+
+	{
+		auto &parentData = current.Lookup(nextID);
+		count[{parentData.g, parentData.h}]++;
+	}
 
 	env->GetSuccessors(current.Lookup(nextID).data, neighbors);
 	for (auto &succ : neighbors)

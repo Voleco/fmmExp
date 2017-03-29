@@ -12,6 +12,7 @@
 #include "AStarOpenClosed.h"
 #include "FPUtil.h"
 #include "Timer.h"
+#include "PairHash.h"
 #include <unordered_map>
 
 template <class state, int epsilon = 1>
@@ -31,15 +32,16 @@ struct MMCompare {
 	}
 };
 
-namespace std {
-	template <> struct hash<std::pair<double, double>>
-	{
-		size_t operator()(const std::pair<double, double> & x) const
-		{
-			return std::hash<double>()(x.first)^(std::hash<double>()(x.second)<<16);
-		}
-	};
-}
+//defined in PairHash.h
+//namespace std {
+//	template <> struct hash<std::pair<double, double>>
+//	{
+//		size_t operator()(const std::pair<double, double> & x) const
+//		{
+//			return std::hash<double>()(x.first)^(std::hash<double>()(x.second)<<16);
+//		}
+//	};
+//}
 
 
 template <class state, class action, class environment, class priorityQueue = AStarOpenClosed<state, MMCompare<state>> >
@@ -111,6 +113,19 @@ public:
 			}
 		}
 	}
+	//what we really want is expanded info, not open info
+	void PrintExpandedStats(std::unordered_map<std::pair<double, double>, int>  &s)
+	{
+		printf("MM eplison = %f Search Expanded distributions: (%s)\n",epsilon, ((&s) == (&f)) ? "forward" : "backward");
+		for (auto i = s.begin(); i != s.end(); i++)
+		{
+			if (i->second > 0)
+			{
+				printf("g: %1.1f h: %1.1f count: %d\n",
+					i->first.first, i->first.second, i->second);
+			}
+		}
+	}
 
 //	void SetWeight(double w) {weight = w;}
 private:
@@ -150,6 +165,7 @@ private:
 	state goal, start;
 	std::unordered_map<std::pair<double, double>, int> dist;
 	std::unordered_map<std::pair<double, double>, int> f, b;
+	std::unordered_map<std::pair<double, double>, int> fExp, bExp;
 	uint64_t nodesTouched, nodesExpanded, uniqueNodesExpanded;
 	state middleNode;
 	double currentCost;
@@ -177,6 +193,7 @@ void MM<state, action, environment, priorityQueue>::GetPath(environment *env, co
 	t.StartTimer();
 	while (!DoSingleSearchStep(thePath))
 	{ }
+
 }
 
 template <class state, class action, class environment, class priorityQueue>
@@ -194,6 +211,8 @@ bool MM<state, action, environment, priorityQueue>::InitializeSearch(environment
 	thePath.resize(0);
 	start = from;
 	goal = to;
+	f.clear();
+	b.clear();
 	if (start == goal)
 		return false;
 	oldp1 = oldp2 = 0;
@@ -201,8 +220,7 @@ bool MM<state, action, environment, priorityQueue>::InitializeSearch(environment
 	lastMinBackwardG = 0;
 	forwardQueue.AddOpenNode(start, env->GetStateHash(start), 0, forwardHeuristic->HCost(start, goal));
 	backwardQueue.AddOpenNode(goal, env->GetStateHash(goal), 0, backwardHeuristic->HCost(goal, start));
-	f.clear();
-	b.clear();
+
 	recheckPath = false;
 	return true;
 }
@@ -247,26 +265,26 @@ bool MM<state, action, environment, priorityQueue>::DoSingleSearchStep(std::vect
 	if (fless(p1, p2))
 	{
 		//Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, g_f, f_f);
-		Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, f);
+		Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, fExp);
 	}
 	else if (fless(p2, p1))
 	{
 		//Expand(backwardQueue, forwardQueue, backwardHeuristic, start, g_b, f_b);
-		Expand(backwardQueue, forwardQueue, backwardHeuristic, start, b);
+		Expand(backwardQueue, forwardQueue, backwardHeuristic, start, bExp);
 	}
 	else { // equal priority
 		if (fless(nextForward.g, nextBackward.g))
 		{
 			//Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, g_f, f_f);
-			Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, f);
+			Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, fExp);
 		}
 		else if (fless(nextBackward.g, nextForward.g))
 		{
 			//Expand(backwardQueue, forwardQueue, backwardHeuristic, start, g_b, f_b);
-			Expand(backwardQueue, forwardQueue, backwardHeuristic, start, b);
+			Expand(backwardQueue, forwardQueue, backwardHeuristic, start, bExp);
 		}
 		else {
-			Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, f);
+			Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, fExp);
 			//Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, g_f, f_f);
 		}
 	}
@@ -354,6 +372,9 @@ bool MM<state, action, environment, priorityQueue>::DoSingleSearchStep(std::vect
 		{
 //			PrintOpenStats(f);
 //			PrintOpenStats(b);
+			printf("MM done!\n");
+			PrintExpandedStats(fExp);
+			PrintExpandedStats(bExp);
 			
 			std::vector<state> pFor, pBack;
 			ExtractPathToGoal(middleNode, pBack);
@@ -381,14 +402,10 @@ void MM<state, action, environment, priorityQueue>::Expand(priorityQueue &curren
 	if (current.Lookup(nextID).reopened == false)
 		uniqueNodesExpanded++;
 
-	// decrease count from parent
+	// increase count 
 	{
 		auto &parentData = current.Lookup(nextID);
-		count[{parentData.g,parentData.h}]--;
-		if (count[{parentData.g,parentData.h}] == 0 && currentCost < DBL_MAX)
-		{
-			recheckPath = true;
-		}
+		count[{parentData.g,parentData.h}]++;
 	}
 
 	env->GetSuccessors(current.Lookup(nextID).data, neighbors);
@@ -410,7 +427,6 @@ void MM<state, action, environment, priorityQueue>::Expand(priorityQueue &curren
 					childData.h = std::max(childData.h, parentData.h-edgeCost);
 					childData.parentID = nextID;
 					childData.g = parentData.g+edgeCost;
-					count[{childData.g,childData.h}]++;
 					dist[{childData.g,childData.h}]++;
 					current.Reopen(childID);
 				}
@@ -422,22 +438,18 @@ void MM<state, action, environment, priorityQueue>::Expand(priorityQueue &curren
 
 				if (fgreater(parentData.h-edgeCost, childData.h))
 				{
-					count[{childData.g,childData.h}]--;
 					dist[{childData.g,childData.h}]--;
 					//minf[childData.g+childData.h]--;
 					childData.h = parentData.h-edgeCost;
 					//minf[childData.g+childData.h]++;
-					count[{childData.g,childData.h}]++;
 					dist[{childData.g,childData.h}]++;
 				}
 				if (fless(parentData.g+edgeCost, childData.g))
 				{
-					count[{childData.g,childData.h}]--;
 					dist[{childData.g,childData.h}]--;
 					childData.parentID = nextID;
 					childData.g = parentData.g+edgeCost;
 					current.KeyChanged(childID);
-					count[{childData.g,childData.h}]++;
 					dist[{childData.g,childData.h}]++;
 					
 					
@@ -473,7 +485,6 @@ void MM<state, action, environment, priorityQueue>::Expand(priorityQueue &curren
 					break;
 //				ming[g]++;
 //				minf[g+h]++;
-				count[{g,h}]++;
 				dist[{g,h}]++;
 				// 1-step BPMX
 				parentData.h = std::max(h-edgeCost, parentData.h);

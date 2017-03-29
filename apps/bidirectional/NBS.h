@@ -16,6 +16,7 @@
 #include "BDOpenClosed.h"
 #include "FPUtil.h"
 #include <unordered_map>
+#include "PairHash.h"
 #include "NBSQueue.h"
 #include "NBSQueueGF.h"
 
@@ -98,6 +99,20 @@ public:
 		}
 		return necessary;
 	}
+
+	void PrintExpandedStats(std::unordered_map<std::pair<double, double>, int>  &s)
+	{
+		printf("NBS Search Expanded distributions: (%s)\n", ((&s) == (&f)) ? "forward" : "backward");
+		for (auto i = s.begin(); i != s.end(); i++)
+		{
+			if (i->second > 0)
+			{
+				printf("g: %1.1f h: %1.1f count: %d\n",
+					i->first.first, i->first.second, i->second);
+			}
+		}
+	}
+
 	double GetSolutionCost() const { return currentCost; }
 	
 	void OpenGLDraw() const;
@@ -130,9 +145,10 @@ private:
 	void OpenGLDraw(const priorityQueue &queue) const;
 	
 	void Expand(uint64_t nextID,
-				priorityQueue &current,
-				priorityQueue &opposite,
-				Heuristic<state> *heuristic, const state &target);
+		priorityQueue &current,
+		priorityQueue &opposite,
+		Heuristic<state> *heuristic, const state &target,
+		std::unordered_map<std::pair<double, double>, int> &count);
 	//direction ==0 forward; 1 backward
 	//void Expand(int direction);
 	uint64_t nodesTouched, nodesExpanded;
@@ -142,7 +158,8 @@ private:
 	std::vector<state> neighbors;
 	environment *env;
 	std::unordered_map<double, int> counts;
-	
+
+	std::unordered_map<std::pair<double, double>, int> f, b;
 	dataStructure queue;
 	//	priorityQueue queue.forwardQueue, queue.backwardQueue;
 	//priorityQueue2 queue.forwardQueue, queue.backwardQueue;
@@ -185,6 +202,8 @@ bool NBS<state, action, environment, dataStructure, priorityQueue>::InitializeSe
 //	queue.forwardQueue.Reset();
 //	queue.backwardQueue.Reset();
 	ResetNodeCount();
+	f.clear();
+	b.clear();
 	thePath.resize(0);
 	start = from;
 	goal = to;
@@ -213,20 +232,17 @@ bool NBS<state, action, environment, dataStructure, priorityQueue>::ExpandAPair(
 		ExtractFromMiddle(thePath);
 		return true;
 	}
-	else if (queue.forwardQueue.Lookup(nForward).data == queue.backwardQueue.Lookup(nBackward).data) // if success, see if nodes are the same (return path)
-	{
-		ExtractFromMiddle(thePath);
-		return true;
-	}
 	else if (!fless(queue.GetLowerBound(), currentCost))
 	{
 		ExtractFromMiddle(thePath);
+		PrintExpandedStats(f);
+		PrintExpandedStats(b);
 		return true;
 	}
 	
 	counts[queue.GetLowerBound()]+=2;
-	Expand(nForward, queue.forwardQueue, queue.backwardQueue, forwardHeuristic, goal);
-	Expand(nBackward, queue.backwardQueue, queue.forwardQueue, backwardHeuristic, start);
+	Expand(nForward, queue.forwardQueue, queue.backwardQueue, forwardHeuristic, goal,f);
+	Expand(nBackward, queue.backwardQueue, queue.forwardQueue, backwardHeuristic, start,b);
 	return false;
 }
 
@@ -253,7 +269,8 @@ template <class state, class action, class environment, class dataStructure, cla
 void NBS<state, action, environment, dataStructure, priorityQueue>::Expand(uint64_t nextID,
 																			priorityQueue &current,
 																			priorityQueue &opposite,
-																			Heuristic<state> *heuristic, const state &target)
+																			Heuristic<state> *heuristic, const state &target,
+	std::unordered_map<std::pair<double, double>, int> &count)
 {
 	
 	//	uint64_t nextID = current.Peek(kOpenReady);
@@ -266,6 +283,12 @@ void NBS<state, action, environment, dataStructure, priorityQueue>::Expand(uint6
 		return;
 	
 	nodesExpanded++;
+
+	{
+		auto &parentData = current.Lookup(nextID);
+		count[{parentData.g, parentData.h}]++;
+	}
+
 	env->GetSuccessors(current.Lookup(nextID).data, neighbors);
 	for (auto &succ : neighbors)
 	{

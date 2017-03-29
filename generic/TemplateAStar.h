@@ -41,6 +41,8 @@
 #include <iostream>
 #include "FPUtil.h"
 #include <ext/hash_map>
+#include <unordered_map>
+#include "PairHash.h"
 #include "AStarOpenClosed.h"
 #include "BucketOpenClosed.h"
 //#include "SearchEnvironment.h" // for the SearchEnvironment class
@@ -93,6 +95,18 @@ public:
 	virtual const char *GetName();
 	
 	void PrintStats();
+	void PrintExpandedStats()
+	{
+		printf("A* Search Expanded distributions: \n");
+		for (auto i = s.begin(); i != s.end(); i++)
+		{
+			if (i->second > 0)
+			{
+				printf("g: %1.1f h: %1.1f count: %d\n",
+					i->first.first, i->first.second, i->second);
+			}
+		}
+	}
 	uint64_t GetUniqueNodesExpanded() { return uniqueNodesExpanded; }
 	void ResetNodeCount() { nodesExpanded = nodesTouched = 0; uniqueNodesExpanded = 0; }
 	int GetMemoryUsage();
@@ -164,6 +178,7 @@ private:
 	int useBPMX;
 	bool reopenNodes;
 	uint64_t uniqueNodesExpanded;
+	std::unordered_map<std::pair<double, double>, int>  s;
 	environment *radEnv;
 	Heuristic<state> *theHeuristic;
 };
@@ -263,6 +278,7 @@ bool TemplateAStar<state,action,environment,openList>::InitializeSearch(environm
 	start = from;
 	goal = to;
 	
+	s.clear();
 	if (env->GoalTest(from, to) && (stopAfterGoal)) //assumes that from and to are valid states
 	{
 		return false;
@@ -323,12 +339,19 @@ bool TemplateAStar<state,action,environment,openList>::DoSingleSearchStep(std::v
 		uniqueNodesExpanded++;
 	nodesExpanded++;
 
+	{
+		auto &parentData = openClosedList.Lookup(nodeid);
+		s[{parentData.g, parentData.h}]++;
+	}
+
 	if ((stopAfterGoal) && (env->GoalTest(openClosedList.Lookup(nodeid).data, goal)))
 	{
 		ExtractPathToStartFromID(nodeid, thePath);
 		// Path is backwards - reverse
 		reverse(thePath.begin(), thePath.end()); 
 		goalFCost = openClosedList.Lookup(nodeid).g + openClosedList.Lookup(nodeid).h;
+
+		PrintExpandedStats();
 		return true;
 	}
 	
