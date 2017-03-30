@@ -127,10 +127,21 @@ void TestTOH(int first, int last)
 		}
 		if (1)
 		{
-			printf("-=-=-A*-=-=-\n");
+			printf("-=-=-forwardA*-=-=-\n");
 			astar.SetHeuristic(f);
 			timer.StartTimer();
 			astar.GetPath(&toh, s, g, thePath);
+			timer.EndTimer();
+			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
+			printf("%llu nodes\t%llu necessary\t", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
+			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+		}
+		if (1)
+		{
+			printf("-=-=-reverseA*-=-=-\n");
+			astar.SetHeuristic(b);
+			timer.StartTimer();
+			astar.GetPath(&toh, g, s, thePath);
 			timer.EndTimer();
 			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
 			printf("%llu nodes\t%llu necessary\t", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
