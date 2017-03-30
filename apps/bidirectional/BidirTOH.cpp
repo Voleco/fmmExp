@@ -45,8 +45,8 @@ template <int N, int pdb1Disks>
 void TestTOH(int first, int last)
 {
 	TemplateAStar<TOHState<N>, TOHMove, TOH<N>> astar;
-	NBS<TOHState<N>, TOHMove, TOH<N>> nbs;
-	MM<TOHState<N>, TOHMove, TOH<N>> mm;
+	NBS<TOHState<N>, TOHMove, TOH<N>, NBSQueue<TOHState<N>,0>> nbs;
+	MM<TOHState<N>, TOHMove, TOH<N>> mm(0);
 	BSStar<TOHState<N>, TOHMove, TOH<N>> bs;
 
 	TOH<N> toh;
@@ -56,6 +56,7 @@ void TestTOH(int first, int last)
 	std::vector<TOHMove> actionPath;
 	Heuristic<TOHState<N>> *f;
 	Heuristic<TOHState<N>> *b;
+	ZeroHeuristic<TOHState<N>> *z = new ZeroHeuristic<TOHState<N>>();
 
 //	g.Reset();
 //	f = BuildPDB<N, pdb1Disks>(g);
