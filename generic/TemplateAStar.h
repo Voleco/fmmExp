@@ -42,6 +42,7 @@
 #include "FPUtil.h"
 #include <ext/hash_map>
 #include <unordered_map>
+#include <map>
 #include "PairHash.h"
 #include "AStarOpenClosed.h"
 #include "BucketOpenClosed.h"
@@ -95,18 +96,30 @@ public:
 	virtual const char *GetName();
 	
 	void PrintStats();
+
 	void PrintExpandedStats()
 	{
-		printf("A* Search Expanded distributions: \n");
+		std::map<double, int>  gDist;
+		int total = 0;
 		for (auto i = s.begin(); i != s.end(); i++)
 		{
 			if (i->second > 0)
 			{
-				printf("g: %1.1f h: %1.1f count: %d\n",
-					i->first.first, i->first.second, i->second);
+				if (fless(i->first.first + i->first.second, goalFCost))
+				{
+					gDist[i->first.first] += i->second;
+					total += i->second;
+				}
 			}
 		}
+		printf("A* total: %d\n", total);
+		printf("Search Expanded distributions: \n");
+		for (auto i = gDist.begin(); i != gDist.end(); i++)
+		{
+			printf("g: %1.1f count: %d\n", i->first, i->second);
+		}
 	}
+
 	uint64_t GetUniqueNodesExpanded() { return uniqueNodesExpanded; }
 	void ResetNodeCount() { nodesExpanded = nodesTouched = 0; uniqueNodesExpanded = 0; }
 	int GetMemoryUsage();

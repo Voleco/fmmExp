@@ -16,6 +16,7 @@
 #include "BDOpenClosed.h"
 #include "FPUtil.h"
 #include <unordered_map>
+#include <map>
 #include "PairHash.h"
 #include "NBSQueue.h"
 #include "NBSQueueGF.h"
@@ -102,14 +103,24 @@ public:
 
 	void PrintExpandedStats(std::unordered_map<std::pair<double, double>, int>  &s)
 	{
-		printf("NBS Search Expanded distributions: (%s)\n", ((&s) == (&f)) ? "forward" : "backward");
+		std::map<double, int>  gDist;
+		int total = 0;
 		for (auto i = s.begin(); i != s.end(); i++)
 		{
-			if (i->second > 0)
+			if (i->second > 0 )
 			{
-				printf("g: %1.1f h: %1.1f count: %d\n",
-					i->first.first, i->first.second, i->second);
+				if (fless(i->first.first + i->first.second, currentCost))
+				{
+					gDist[i->first.first] += i->second;
+					total += i->second;
+				}
 			}
+		}
+		printf("NBS (%s) total: %d\n", ((&s) == (&f)) ? "forward" : "backward", total);
+		printf("Search Expanded distributions: \n");
+		for (auto i = gDist.begin(); i != gDist.end(); i++)
+		{
+			printf("g: %1.1f count: %d\n",i->first, i->second);
 		}
 	}
 

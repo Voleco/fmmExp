@@ -14,6 +14,7 @@
 #include "Timer.h"
 #include "PairHash.h"
 #include <unordered_map>
+#include <map>
 
 template <class state, int epsilon = 1>
 struct BSCompare {
@@ -57,16 +58,24 @@ public:
 
 	void PrintExpandedStats(std::unordered_map<std::pair<double, double>, int>  &s)
 	{
-		printf("BS* Search Expanded distributions: (%s)\n", ((&s) == (&f)) ? "forward" : "backward");
+		std::map<double, int>  gDist;
+		int total = 0;
 		for (auto i = s.begin(); i != s.end(); i++)
 		{
 			if (i->second > 0)
 			{
-				bool ignore = false;
-				ignore = (i->first.first + i->first.second >= currentCost);
-				printf("%c g: %1.1f h: %1.1f count: %d\n", ignore ? '*' : ' ',
-					i->first.first, i->first.second, i->second);
+				if (fless(i->first.first + i->first.second, currentCost))
+				{
+					gDist[i->first.first] += i->second;
+					total += i->second;
+				}
 			}
+		}
+		printf("BS* (%s) total: %d\n", ((&s) == (&f)) ? "forward" : "backward", total);
+		printf("Search Expanded distributions: \n");
+		for (auto i = gDist.begin(); i != gDist.end(); i++)
+		{
+			printf("g: %1.1f count: %d\n", i->first, i->second);
 		}
 	}
 
