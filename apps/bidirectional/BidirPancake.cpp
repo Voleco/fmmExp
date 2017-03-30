@@ -39,8 +39,8 @@ void TestPancakeTR()
 		PancakePuzzle<S> pancake(gap);
 		PancakePuzzle<S> pancake2(gap);
 		
-		NBS<PancakePuzzleState<S>, PancakePuzzleAction, PancakePuzzle<S>> nbs;
-		MM<PancakePuzzleState<S>, PancakePuzzleAction, PancakePuzzle<S>> mm;
+		NBS<PancakePuzzleState<S>, PancakePuzzleAction, PancakePuzzle<S>,NBSQueue<PancakePuzzleState<S>,0>> nbs;
+		MM<PancakePuzzleState<S>, PancakePuzzleAction, PancakePuzzle<S>> mm(0);
 		TemplateAStar<PancakePuzzleState<S>, PancakePuzzleAction, PancakePuzzle<S>> astar;
 		IDAStar<PancakePuzzleState<S>, PancakePuzzleAction, false> idastar;
 		
@@ -109,7 +109,7 @@ void TestPancakeTR()
 const int N = 16;
 void TestPancakeRandom()
 {
-	for (int gap = 0; gap < 4; gap++)
+	for (int gap = 0; gap < 3; gap++)
 	{
 		srandom(2017218);
 		PancakePuzzleState<N> start;
@@ -139,6 +139,7 @@ void TestPancakeRandom()
 			std::cout << original << "\n";
 			
 			// A*
+			if(0)
 			{
 				TemplateAStar<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> astar;
 				start = original;
@@ -148,8 +149,21 @@ void TestPancakeRandom()
 				printf("GAP-%d A* found path length %1.0f; %llu expanded; %llu necessary; %1.2fs elapsed\n", gap, pancake.GetPathLength(astarPath),
 					   astar.GetNodesExpanded(), astar.GetNecessaryExpansions(), t1.GetElapsedTime());
 			}
+			//reverse A*
+			if (0)
+			{
+				TemplateAStar<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> astar;
+				goal.Reset();
+				start = original;
+				t1.StartTimer();
+				astar.GetPath(&pancake, goal, start, astarPath);
+				t1.EndTimer();
+				printf("GAP-%d A* found path length %1.0f; %llu expanded; %llu necessary; %1.2fs elapsed\n", gap, pancake.GetPathLength(astarPath),
+					astar.GetNodesExpanded(), astar.GetNecessaryExpansions(), t1.GetElapsedTime());
+			}
 			
 			// NBS
+			if(0)
 			{
 				NBS<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> nbs;
 				goal.Reset();
@@ -162,6 +176,7 @@ void TestPancakeRandom()
 			}
 			
 			// BS*
+			if(0)
 			{
 				BSStar<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> bs;
 				goal.Reset();
@@ -174,6 +189,7 @@ void TestPancakeRandom()
 			}
 			
 			// IDA*
+			if(0)
 			{
 				IDAStar<PancakePuzzleState<N>, PancakePuzzleAction, false> idastar;
 				goal.Reset();
@@ -186,21 +202,22 @@ void TestPancakeRandom()
 			}
 			
 			// MM
+			if(0)
 			{
-				MM<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> mm;
+				MM<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> mm(0);
 				goal.Reset();
 				start = original;
 				t4.StartTimer();
 				mm.GetPath(&pancake, start, goal, &pancake, &pancake2, mmPath);
 				t4.EndTimer();
 				printf("GAP-%d MM found path length %1.0f; %llu expanded; %llu necessary; %1.2fs elapsed\n", gap, pancake.GetPathLength(mmPath),
-					   mm.GetNodesExpanded(), mm.GetNecessaryExpansions(), t1.GetElapsedTime());
+					   mm.GetNodesExpanded(), mm.GetNecessaryExpansions(), t4.GetElapsedTime());
 			}
 
 			// MM0
 			if (gap == 3)
 			{
-				MM<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> mm;
+				MM<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> mm(0);
 				ZeroHeuristic<PancakePuzzleState<N>> z;
 				goal.Reset();
 				start = original;
