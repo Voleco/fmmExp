@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <fstream>
+#include <map>
 #include "GUICode.h"
 #include "ScenarioLoader.h"
 #include "Map2DEnvironment.h"
@@ -19,6 +20,33 @@
 #include "NBSQueueGF.h"
 #include "NBS.h"
 #include "BSStar.h"
+
+//assume min gap between 2 g value is 0.5
+int getminVC(double solutionCost, std::map<double,int> forGDist, std::map<double,int> revGDist)
+{
+	int minVC = INT32_MAX;
+	double best = 0;
+	for (double cur = 0; cur <= solutionCost; cur = cur + 0.5)
+	{
+		int curVC = 0;
+		for (double i = 0; i <= cur; i = i + 0.5)
+		{
+			curVC += forGDist[i];
+		}
+		for (double j = 0; j < solutionCost - cur; j = j + 0.5)
+		{
+			curVC += revGDist[j];
+		}
+		if (curVC < minVC)
+		{
+			minVC = curVC;
+			best = cur;
+		}
+	}
+	std::cout << "best meeting point: " << best << " minVC: " << minVC << "\n";
+	return minVC;
+}
+
 
 Map *map = 0;
 MapEnvironment *me = 0;
@@ -962,13 +990,21 @@ void AnalyzeNBS(const char *map, const char *scenario, double weight)
 		std::vector<xyLoc> mm0Path;
 		std::vector<xyLoc> nbsPath;
 		std::vector<xyLoc> bsPath;
+
 		astar.SetHeuristic(me);
 		backastar.SetHeuristic(me);
 
+		std::map<double, int> forGDist;
+		std::map<double, int> backGDist;
+
 		astar.GetPath(me, start, goal, correctPath);
 		printf("%d %1.1f forward A* nodes: %llu necessary %llu\n", x, me->GetPathLength(correctPath), astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
+		forGDist = astar.GetGDist();
 		backastar.GetPath(me, goal, start, correctPath2);
 		printf("%d %1.1f backward A* nodes: %llu necessary %llu\n", x, me->GetPathLength(correctPath2), backastar.GetNodesExpanded(), backastar.GetNecessaryExpansions());
+		backGDist = backastar.GetGDist();
+
+		getminVC(me->GetPathLength(correctPath), forGDist, backGDist);
 
 		bs.GetPath(me, start, goal, me, me, bsPath);
 		printf("%d %1.1f BS nodes: %llu necessary %llu\n", x, me->GetPathLength(bsPath), bs.GetNodesExpanded(), bs.GetNecessaryExpansions());

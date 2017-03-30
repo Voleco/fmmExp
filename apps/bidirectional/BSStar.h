@@ -190,8 +190,8 @@ bool BSStar<state, action, environment, priorityQueue>::DoSingleSearchStep(std::
 			thePath = pFor;
 			thePath.insert( thePath.end(), pBack.begin()+1, pBack.end() );
 		}
-		PrintExpandedStats(f);
-		PrintExpandedStats(b);
+		//PrintExpandedStats(f);
+		//PrintExpandedStats(b);
 		return true;
 	}
 	
@@ -424,18 +424,36 @@ template <class state, class action, class environment, class priorityQueue>
 uint64_t BSStar<state, action, environment, priorityQueue>::GetNecessaryExpansions() const
 {
 	uint64_t count = 0;
-	for (unsigned int x = 0; x < forwardQueue.size(); x++)
+	//for (unsigned int x = 0; x < forwardQueue.size(); x++)
+	//{
+	//	const AStarOpenClosedData<state> &data = forwardQueue.Lookat(x);
+	//	if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)))
+	//		count++;
+	//}
+	//for (unsigned int x = 0; x < backwardQueue.size(); x++)
+	//{
+	//	const AStarOpenClosedData<state> &data = backwardQueue.Lookat(x);
+	//	if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)))
+	//		count++;
+	//}
+	for (auto i = f.begin(); i != f.end(); i++)
 	{
-		const AStarOpenClosedData<state> &data = forwardQueue.Lookat(x);
-		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)))
-			count++;
+		if (i->second > 0)
+		{
+			if (fless(i->first.first + i->first.second, currentCost))
+				count += i->second;
+		}
 	}
-	for (unsigned int x = 0; x < backwardQueue.size(); x++)
+
+	for (auto i = b.begin(); i != b.end(); i++)
 	{
-		const AStarOpenClosedData<state> &data = backwardQueue.Lookat(x);
-		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)))
-			count++;
+		if (i->second > 0)
+		{
+			if (fless(i->first.first + i->first.second, currentCost))
+				count += i->second;
+		}
 	}
+
 	return count;
 }
 

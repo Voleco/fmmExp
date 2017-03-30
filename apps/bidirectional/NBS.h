@@ -246,8 +246,8 @@ bool NBS<state, action, environment, dataStructure, priorityQueue>::ExpandAPair(
 	else if (!fless(queue.GetLowerBound(), currentCost))
 	{
 		ExtractFromMiddle(thePath);
-		PrintExpandedStats(f);
-		PrintExpandedStats(b);
+		//PrintExpandedStats(f);
+		//PrintExpandedStats(b);
 		return true;
 	}
 	

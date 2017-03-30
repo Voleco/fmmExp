@@ -120,6 +120,20 @@ public:
 		}
 	}
 
+	std::map<double, int> GetGDist()
+	{
+		std::map<double, int>  gDist;
+		for (auto i = s.begin(); i != s.end(); i++)
+		{
+			if (i->second > 0)
+			{
+				if (fless(i->first.first + i->first.second, goalFCost))
+					gDist[i->first.first] += i->second;
+			}
+		}
+		return gDist;
+	}
+
 	uint64_t GetUniqueNodesExpanded() { return uniqueNodesExpanded; }
 	void ResetNodeCount() { nodesExpanded = nodesTouched = 0; uniqueNodesExpanded = 0; }
 	int GetMemoryUsage();
@@ -364,7 +378,7 @@ bool TemplateAStar<state,action,environment,openList>::DoSingleSearchStep(std::v
 		reverse(thePath.begin(), thePath.end()); 
 		goalFCost = openClosedList.Lookup(nodeid).g + openClosedList.Lookup(nodeid).h;
 
-		PrintExpandedStats();
+		//PrintExpandedStats();
 		return true;
 	}
 	
