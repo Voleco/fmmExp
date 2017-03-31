@@ -16,7 +16,7 @@
 #include <unordered_map>
 #include <map>
 
-template <class state, int epsilon = 1>
+template <class state, int epsilon = 0>
 struct MMCompare {
 	bool operator()(const AStarOpenClosedData<state> &i1, const AStarOpenClosedData<state> &i2) const
 	{
@@ -48,7 +48,7 @@ struct MMCompare {
 template <class state, class action, class environment, class priorityQueue = AStarOpenClosed<state, MMCompare<state>> >
 class MM {
 public:
-	MM(double epsilon = 1.0):epsilon(epsilon) { forwardHeuristic = 0; backwardHeuristic = 0; env = 0; ResetNodeCount(); }
+	MM(double epsilon = 0.0):epsilon(epsilon) { forwardHeuristic = 0; backwardHeuristic = 0; env = 0; ResetNodeCount(); }
 	virtual ~MM() {}
 	void GetPath(environment *env, const state& from, const state& to,
 				 Heuristic<state> *forward, Heuristic<state> *backward, std::vector<state> &thePath);
