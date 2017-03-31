@@ -120,9 +120,9 @@ public:
 		}
 	}
 
-	std::map<double, int> GetGDist()
+	void GetGDist(std::map<double, int>& gDist)
 	{
-		std::map<double, int>  gDist;
+		gDist.clear();
 		for (auto i = s.begin(); i != s.end(); i++)
 		{
 			if (i->second > 0)
@@ -131,7 +131,6 @@ public:
 					gDist[i->first.first] += i->second;
 			}
 		}
-		return gDist;
 	}
 
 	uint64_t GetUniqueNodesExpanded() { return uniqueNodesExpanded; }
