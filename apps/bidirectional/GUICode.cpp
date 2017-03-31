@@ -27,16 +27,16 @@ int getminVC(double solutionCost, std::map<double,int>& forGDist, std::map<doubl
 	int minVC = INT32_MAX;
 	double bestMP = 0;
 	int curVC = 0;
-	for (double j = 0; j <= solutionCost; j = j + 0.5)
+	for (double j = 0; j < solutionCost; j = j + 0.5)
 	{
 		curVC += revGDist[j];
 	}
 	minVC = curVC;
-	for (double cur = 0; cur <= solutionCost; cur = cur + 0.5)
+	for (double cur = 0.5; cur <= solutionCost; cur = cur + 0.5)
 	{
-		auto i = forGDist.find(cur);
+		auto i = forGDist.find(cur-0.5);
 		if(i!=forGDist.end())
-			curVC += forGDist[cur];
+			curVC += forGDist[cur-0.5];
 
 		auto j = revGDist.find(solutionCost-cur);
 		if (j != revGDist.end())

@@ -377,7 +377,7 @@ bool TemplateAStar<state,action,environment,openList>::DoSingleSearchStep(std::v
 		reverse(thePath.begin(), thePath.end()); 
 		goalFCost = openClosedList.Lookup(nodeid).g + openClosedList.Lookup(nodeid).h;
 
-		PrintExpandedStats();
+		//PrintExpandedStats();
 		return true;
 	}
 	

@@ -384,8 +384,8 @@ bool MM<state, action, environment, priorityQueue>::DoSingleSearchStep(std::vect
 //			PrintOpenStats(f);
 //			PrintOpenStats(b);
 			//printf("MM done!\n");
-			PrintExpandedStats(fExp);
-			PrintExpandedStats(bExp);
+			//PrintExpandedStats(fExp);
+			//PrintExpandedStats(bExp);
 			
 			std::vector<state> pFor, pBack;
 			ExtractPathToGoal(middleNode, pBack);
