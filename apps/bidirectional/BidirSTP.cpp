@@ -130,8 +130,8 @@ MNPuzzleState<4, 4> GetKorfInstance(int which)
 
 void TestSTP(int algorithm)
 {
-	NBS<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> nbs;
-	MM<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> mm;
+	NBS<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>,NBSQueue<MNPuzzleState<4, 4>,0>> nbs;
+	MM<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> mm(0);
 	BSStar<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> bs;
 	TemplateAStar<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> astar;
 	MNPuzzle<4,4> mnp;
@@ -198,7 +198,16 @@ void TestSTP(int algorithm)
 			printf("MM found path length %1.0f; %llu expanded; %llu necessary; %llu generated; %1.2fs elapsed\n", mnp.GetPathLength(nbsPath),
 				   mm.GetNodesExpanded(), mm.GetNecessaryExpansions(), mm.GetNodesTouched(), t2.GetElapsedTime());
 		}
-		
+		if (algorithm == 5) // reverse A*
+		{
+			goal.Reset();
+			start = GetKorfInstance(x);
+			t1.StartTimer();
+			astar.GetPath(&mnp, goal, start, astarPath);
+			t1.EndTimer();
+			printf("reverse A* found path length %1.0f; %llu expanded; %llu necessary; %llu generated; %1.2fs elapsed\n", mnp.GetPathLength(astarPath),
+				astar.GetNodesExpanded(), astar.GetNecessaryExpansions(), astar.GetNodesTouched(), t1.GetElapsedTime());
+		}
 //		
 //		std::cout << astar.GetNodesExpanded() << "\t" << nbs.GetNodesExpanded() << "\t";
 //		std::cout << t1.GetElapsedTime() << "\t" <<  t2.GetElapsedTime() << "\n";
