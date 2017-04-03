@@ -542,13 +542,13 @@ uint64_t MM<state, action, environment, priorityQueue>::GetNecessaryExpansions()
 	for (unsigned int x = 0; x < forwardQueue.size(); x++)
 	{
 		const AStarOpenClosedData<state> &data = forwardQueue.Lookat(x);
-		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)))
+		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)) && fless(data.g, currentCost * 0.5))
 			count++;
 	}
 	for (unsigned int x = 0; x < backwardQueue.size(); x++)
 	{
 		const AStarOpenClosedData<state> &data = backwardQueue.Lookat(x);
-		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)))
+		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)) && fless(data.g, currentCost * 0.5))
 			count++;
 	}
 	return count;
