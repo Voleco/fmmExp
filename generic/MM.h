@@ -120,7 +120,7 @@ public:
 				}
 			}
 		}
-		printf("MM (%s) total: %d\n", ((&s) == (&f)) ? "forward" : "backward", total);
+		printf("MM (%s) total: %d\n", ((&s) == (&fExp)) ? "forward" : "backward", total);
 		printf("Search Expanded distributions: \n");
 		for (auto i = gDist.begin(); i != gDist.end(); i++)
 		{
@@ -375,8 +375,8 @@ bool MM<state, action, environment, priorityQueue>::DoSingleSearchStep(std::vect
 //			PrintOpenStats(f);
 //			PrintOpenStats(b);
 			
-//			PrintExpandedStats(fExp);
-//			PrintExpandedStats(bExp);
+			//PrintExpandedStats(fExp);
+			//PrintExpandedStats(bExp);
 
 			std::vector<state> pFor, pBack;
 			ExtractPathToGoal(middleNode, pBack);
@@ -542,13 +542,13 @@ uint64_t MM<state, action, environment, priorityQueue>::GetNecessaryExpansions()
 	for (unsigned int x = 0; x < forwardQueue.size(); x++)
 	{
 		const AStarOpenClosedData<state> &data = forwardQueue.Lookat(x);
-		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)))
+		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)) && (fless(data.g*2,currentCost)))
 			count++;
 	}
 	for (unsigned int x = 0; x < backwardQueue.size(); x++)
 	{
 		const AStarOpenClosedData<state> &data = backwardQueue.Lookat(x);
-		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)))
+		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)) && (fless(data.g * 2, currentCost)))
 			count++;
 	}
 	return count;
