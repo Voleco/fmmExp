@@ -190,8 +190,8 @@ bool BSStar<state, action, environment, priorityQueue>::DoSingleSearchStep(std::
 			thePath = pFor;
 			thePath.insert( thePath.end(), pBack.begin()+1, pBack.end() );
 		}
-		PrintExpandedStats(f);
-		PrintExpandedStats(b);
+		//PrintExpandedStats(f);
+		//PrintExpandedStats(b);
 		return true;
 	}
 	

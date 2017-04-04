@@ -1,0 +1,1 @@
+for i in dao/brc*.map; do printf "$i\n"; ../bin/release/bidirectional -nbs $i ../scenarios/$i.scen; done
